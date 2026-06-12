@@ -34,6 +34,13 @@
   #root {
     min-height: 100svh;
   }
+
+  .dark input:not([type="color"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  .dark select,
+  .dark textarea {
+    color: #E8EDF5;
+    color-scheme: dark;
+  }
 }
 
 /* Dark mode — navy blue palette */

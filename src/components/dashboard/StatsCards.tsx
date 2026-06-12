@@ -26,7 +26,7 @@ function Card({ title, value, subtitle, icon, colorClass }: CardProps) {
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">{title}</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white truncate">{value}</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white leading-tight">{value}</p>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{subtitle}</p>
         </div>
         <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${colorClass}`}>

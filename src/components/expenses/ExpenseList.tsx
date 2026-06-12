@@ -9,6 +9,7 @@ interface Props {
   expenses: Expense[]
   onEdit: (expense: Expense) => void
   onDelete: (id: string) => void
+  onDeleteGroup?: (id: string) => void
   compact?: boolean
 }
 
@@ -24,8 +25,19 @@ function PaymentBadge({ method }: { method: string }) {
   )
 }
 
-function ActionMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
+function ActionMenu({
+  expense,
+  onEdit,
+  onDelete,
+  onDeleteGroup,
+}: {
+  expense: Expense
+  onEdit: () => void
+  onDelete: () => void
+  onDeleteGroup?: () => void
+}) {
   const [open, setOpen] = useState(false)
+  const isInstallment = expense.installment_count > 1
   return (
     <div className="relative">
       <button
@@ -37,7 +49,7 @@ function ActionMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => 
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-8 z-20 w-36 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 py-1 overflow-hidden">
+          <div className="absolute right-0 top-8 z-20 w-44 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 py-1 overflow-hidden">
             <button
               onClick={() => { onEdit(); setOpen(false) }}
               className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -48,8 +60,17 @@ function ActionMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => 
               onClick={() => { onDelete(); setOpen(false) }}
               className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
             >
-              <Trash2 className="w-3.5 h-3.5" /> Excluir
+              <Trash2 className="w-3.5 h-3.5" />
+              {isInstallment ? `Excluir parcela ${expense.installment_index}/${expense.installment_count}` : 'Excluir'}
             </button>
+            {isInstallment && onDeleteGroup && (
+              <button
+                onClick={() => { onDeleteGroup(); setOpen(false) }}
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Excluir todas ({expense.installment_count})
+              </button>
+            )}
           </div>
         </>
       )}
@@ -57,7 +78,7 @@ function ActionMenu({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => 
   )
 }
 
-export function ExpenseList({ expenses, onEdit, onDelete, compact = false }: Props) {
+export function ExpenseList({ expenses, onEdit, onDelete, onDeleteGroup, compact = false }: Props) {
   if (expenses.length === 0) {
     return (
       <div className="text-center py-12 text-gray-400 dark:text-gray-600">
@@ -72,6 +93,7 @@ export function ExpenseList({ expenses, onEdit, onDelete, compact = false }: Pro
       {expenses.map(expense => {
         const color = CATEGORY_COLORS[expense.category as Category] ?? '#6b7280'
         const icon  = CATEGORY_ICONS[expense.category as Category]  ?? '📦'
+        const isInstallment = expense.installment_count > 1
         return (
           <li key={expense.id} className="flex items-center gap-3 py-3 group">
             <div
@@ -84,6 +106,11 @@ export function ExpenseList({ expenses, onEdit, onDelete, compact = false }: Pro
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                 {expense.description}
+                {isInstallment && (
+                  <span className="ml-1.5 text-[11px] font-semibold text-indigo-500 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-1.5 py-0.5 rounded-md align-middle">
+                    {expense.installment_index}/{expense.installment_count}
+                  </span>
+                )}
               </p>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span className="text-xs text-gray-400 dark:text-gray-500">
@@ -110,7 +137,12 @@ export function ExpenseList({ expenses, onEdit, onDelete, compact = false }: Pro
                 })}
               </span>
               {!compact && (
-                <ActionMenu onEdit={() => onEdit(expense)} onDelete={() => onDelete(expense.id)} />
+                <ActionMenu
+                  expense={expense}
+                  onEdit={() => onEdit(expense)}
+                  onDelete={() => onDelete(expense.id)}
+                  onDeleteGroup={onDeleteGroup ? () => onDeleteGroup(expense.id) : undefined}
+                />
               )}
             </div>
           </li>

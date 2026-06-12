@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { addMonths, parseISO, format } from 'date-fns'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import type { Expense, ExpenseFormData } from '../types'
@@ -34,21 +35,62 @@ export function useExpenses(year: number, month: number) {
 
   const addExpense = async (formData: ExpenseFormData) => {
     if (!user) return { error: 'Not authenticated' }
+
+    const installmentCount = formData.installment_count && formData.installment_count > 1
+      ? formData.installment_count
+      : 1
+
+    if (installmentCount === 1) {
+      const { data: inserted, error } = await supabase
+        .from('expenses')
+        .insert({
+          user_id:           user.id,
+          description:       formData.description,
+          amount:            formData.amount,
+          category:          formData.category,
+          payment_method:    formData.payment_method,
+          date:              formData.date,
+          notes:             formData.notes ?? null,
+          installment_index: 1,
+          installment_count: 1,
+        })
+        .select()
+        .single()
+      if (error) return { error: error.message }
+      setExpenses(prev => [inserted as Expense, ...prev])
+      return { error: null }
+    }
+
+    const groupId = crypto.randomUUID()
+    const baseDate = parseISO(formData.date)
+    const rows = Array.from({ length: installmentCount }, (_, i) => ({
+      user_id:              user.id,
+      description:          formData.description,
+      amount:               formData.amount,
+      category:             formData.category,
+      payment_method:       formData.payment_method,
+      date:                 format(addMonths(baseDate, i), 'yyyy-MM-dd'),
+      notes:                formData.notes ?? null,
+      installment_group_id: groupId,
+      installment_index:    i + 1,
+      installment_count:    installmentCount,
+    }))
+
     const { data: inserted, error } = await supabase
       .from('expenses')
-      .insert({
-        user_id:        user.id,
-        description:    formData.description,
-        amount:         formData.amount,
-        category:       formData.category,
-        payment_method: formData.payment_method,
-        date:           formData.date,
-        notes:          formData.notes ?? null,
-      })
+      .insert(rows)
       .select()
-      .single()
     if (error) return { error: error.message }
-    setExpenses(prev => [inserted as Expense, ...prev])
+
+    const currentMonthRows = ((inserted ?? []) as Expense[]).filter(e => {
+      const d = parseISO(e.date)
+      return d.getFullYear() === year && d.getMonth() + 1 === month
+    })
+    setExpenses(prev =>
+      [...currentMonthRows, ...prev].sort((a, b) =>
+        b.date.localeCompare(a.date) || b.created_at.localeCompare(a.created_at)
+      )
+    )
     return { error: null }
   }
 
@@ -73,11 +115,20 @@ export function useExpenses(year: number, month: number) {
     return { error: null }
   }
 
-  const deleteExpense = async (id: string) => {
-    const { error } = await supabase
-      .from('expenses')
-      .delete()
-      .eq('id', id)
+  const deleteExpense = async (id: string, deleteGroup = false) => {
+    if (deleteGroup) {
+      const expense = expenses.find(e => e.id === id)
+      if (expense?.installment_group_id) {
+        const { error } = await supabase
+          .from('expenses')
+          .delete()
+          .eq('installment_group_id', expense.installment_group_id)
+        if (error) return { error: error.message }
+        setExpenses(prev => prev.filter(e => e.installment_group_id !== expense.installment_group_id))
+        return { error: null }
+      }
+    }
+    const { error } = await supabase.from('expenses').delete().eq('id', id)
     if (error) return { error: error.message }
     setExpenses(prev => prev.filter(e => e.id !== id))
     return { error: null }

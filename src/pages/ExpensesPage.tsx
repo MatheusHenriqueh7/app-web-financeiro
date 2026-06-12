@@ -49,6 +49,13 @@ export function ExpensesPage() {
   const handleDelete = async (id: string) => {
     if (window.confirm('Excluir este gasto?')) await deleteExpense(id)
   }
+  const handleDeleteGroup = async (id: string) => {
+    const expense = expenses.find(e => e.id === id)
+    if (!expense) return
+    if (window.confirm(`Excluir todas as ${expense.installment_count} parcelas de "${expense.description}"?`)) {
+      await deleteExpense(id, true)
+    }
+  }
   const handleCloseModal = () => {
     setModalOpen(false)
     setEditingExpense(undefined)
@@ -136,7 +143,7 @@ export function ExpensesPage() {
               ))}
             </div>
           ) : (
-            <ExpenseList expenses={filtered} onEdit={handleEdit} onDelete={handleDelete} />
+            <ExpenseList expenses={filtered} onEdit={handleEdit} onDelete={handleDelete} onDeleteGroup={handleDeleteGroup} />
           )}
         </div>
       </div>

@@ -19,6 +19,9 @@ export interface Expense {
   payment_method: PaymentMethod
   date: string
   notes: string | null
+  installment_group_id: string | null
+  installment_index: number
+  installment_count: number
   created_at: string
   updated_at: string
 }
@@ -30,6 +33,7 @@ export interface ExpenseFormData {
   payment_method: PaymentMethod
   date: string
   notes?: string
+  installment_count?: number
 }
 
 export interface CategoryLimit {
