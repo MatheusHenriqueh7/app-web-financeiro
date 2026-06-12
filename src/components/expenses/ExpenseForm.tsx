@@ -5,7 +5,8 @@ import { format } from 'date-fns'
 import { Input } from '../ui/Input'
 import { Select } from '../ui/Select'
 import { Button } from '../ui/Button'
-import { CATEGORIES, PAYMENT_METHODS } from '../../types'
+import { PAYMENT_METHODS } from '../../types'
+import { useCategoryNames } from '../../hooks/useCategoryNames'
 import type { Expense, ExpenseFormData } from '../../types'
 
 const schema = z.object({
@@ -26,6 +27,8 @@ interface Props {
 }
 
 export function ExpenseForm({ initial, onSubmit, onCancel }: Props) {
+  const categories = useCategoryNames()
+
   const {
     register,
     handleSubmit,
@@ -55,7 +58,7 @@ export function ExpenseForm({ initial, onSubmit, onCancel }: Props) {
     await onSubmit({
       description:    fields.description,
       amount,
-      category:       fields.category as ExpenseFormData['category'],
+      category:       fields.category,
       payment_method: fields.payment_method as ExpenseFormData['payment_method'],
       date:           fields.date,
       notes:          fields.notes,
@@ -92,7 +95,7 @@ export function ExpenseForm({ initial, onSubmit, onCancel }: Props) {
       <div className="grid grid-cols-2 gap-4">
         <Select
           label="Categoria"
-          options={CATEGORIES.map(c => ({ value: c, label: c }))}
+          options={categories.map(c => ({ value: c, label: c }))}
           error={errors.category?.message}
           {...register('category')}
         />

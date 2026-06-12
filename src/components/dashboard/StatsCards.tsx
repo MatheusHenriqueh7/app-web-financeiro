@@ -1,9 +1,11 @@
-import { TrendingDown, TrendingUp, Wallet } from 'lucide-react'
+import { TrendingDown, TrendingUp, Wallet, CreditCard, RefreshCw } from 'lucide-react'
 
 interface Props {
   totalSpent: number
   income: number
   expenseCount: number
+  creditTotal: number
+  totalFixed: number
 }
 
 function formatCurrency(value: number) {
@@ -35,13 +37,13 @@ function Card({ title, value, subtitle, icon, colorClass }: CardProps) {
   )
 }
 
-export function StatsCards({ totalSpent, income, expenseCount }: Props) {
-  const balance     = income - totalSpent
-  const isPositive  = balance >= 0
-  const spentPct    = income > 0 ? Math.min((totalSpent / income) * 100, 100) : 0
+export function StatsCards({ totalSpent, income, expenseCount, creditTotal, totalFixed }: Props) {
+  const balance    = income - totalSpent
+  const isPositive = balance >= 0
+  const spentPct   = income > 0 ? Math.min((totalSpent / income) * 100, 100) : 0
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <Card
         title="Total gasto"
         value={formatCurrency(totalSpent)}
@@ -63,6 +65,28 @@ export function StatsCards({ totalSpent, income, expenseCount }: Props) {
         icon={<TrendingUp className={`w-5 h-5 ${isPositive ? 'text-emerald-600' : 'text-rose-600'}`} />}
         colorClass={isPositive ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-rose-50 dark:bg-rose-900/20'}
       />
+      <Card
+        title="Fatura crédito"
+        value={formatCurrency(creditTotal)}
+        subtitle={totalFixed > 0 ? `Fixos: ${formatCurrency(totalFixed)}/mês` : 'Gastos no crédito'}
+        icon={<CreditCard className="w-5 h-5 text-violet-600" />}
+        colorClass="bg-violet-50 dark:bg-violet-900/20"
+      />
+    </div>
+  )
+}
+
+export function FixedExpensesBanner({ totalFixed }: { totalFixed: number }) {
+  if (totalFixed === 0) return null
+  return (
+    <div className="flex items-center gap-2.5 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-xl px-4 py-2.5">
+      <RefreshCw className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0" />
+      <p className="text-xs text-indigo-700 dark:text-indigo-300">
+        <span className="font-semibold">
+          {totalFixed.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+        </span>
+        {' '}em gastos fixos mensais recorrentes
+      </p>
     </div>
   )
 }

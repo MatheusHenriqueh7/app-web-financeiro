@@ -4,8 +4,10 @@ import { ptBR } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { useExpenses } from '../hooks/useExpenses'
 import { useProfile } from '../hooks/useProfile'
-import { StatsCards } from '../components/dashboard/StatsCards'
-import { CategoryBreakdown } from '../components/dashboard/CategoryBreakdown'
+import { useCategoryLimits } from '../hooks/useCategoryLimits'
+import { useRecurringExpenses } from '../hooks/useRecurringExpenses'
+import { StatsCards, FixedExpensesBanner } from '../components/dashboard/StatsCards'
+import { SpendingPieChart } from '../components/dashboard/SpendingPieChart'
 import { ExpenseList } from '../components/expenses/ExpenseList'
 import { ExpenseModal } from '../components/expenses/ExpenseModal'
 import { Button } from '../components/ui/Button'
@@ -15,42 +17,29 @@ export function DashboardPage() {
   const now = new Date()
   const [year, setYear]   = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth() + 1)
-  const [modalOpen, setModalOpen]       = useState(false)
+  const [modalOpen, setModalOpen]           = useState(false)
   const [editingExpense, setEditingExpense] = useState<Expense | undefined>()
 
-  const { profile } = useProfile()
+  const { profile }   = useProfile()
   const { expenses, loading, totalSpent, addExpense, updateExpense, deleteExpense } = useExpenses(year, month)
+  const { categories: categoryLimits } = useCategoryLimits()
+  const { totalFixed } = useRecurringExpenses()
 
-  const prevMonth = () => {
-    if (month === 1) { setYear(y => y - 1); setMonth(12) }
-    else setMonth(m => m - 1)
-  }
-  const nextMonth = () => {
-    if (month === 12) { setYear(y => y + 1); setMonth(1) }
-    else setMonth(m => m + 1)
-  }
+  const prevMonth = () => { if (month === 1) { setYear(y => y - 1); setMonth(12) } else setMonth(m => m - 1) }
+  const nextMonth = () => { if (month === 12) { setYear(y => y + 1); setMonth(1) } else setMonth(m => m + 1) }
 
-  const handleAdd = async (data: ExpenseFormData) => {
-    await addExpense(data)
-  }
-  const handleUpdate = async (data: ExpenseFormData) => {
-    if (editingExpense) await updateExpense(editingExpense.id, data)
-  }
-  const handleEdit = (expense: Expense) => {
-    setEditingExpense(expense)
-    setModalOpen(true)
-  }
-  const handleDelete = async (id: string) => {
-    if (window.confirm('Excluir este gasto?')) await deleteExpense(id)
-  }
-  const handleCloseModal = () => {
-    setModalOpen(false)
-    setEditingExpense(undefined)
-  }
+  const handleAdd    = async (data: ExpenseFormData) => { await addExpense(data) }
+  const handleUpdate = async (data: ExpenseFormData) => { if (editingExpense) await updateExpense(editingExpense.id, data) }
+  const handleEdit   = (expense: Expense) => { setEditingExpense(expense); setModalOpen(true) }
+  const handleDelete = async (id: string) => { if (window.confirm('Excluir este gasto?')) await deleteExpense(id) }
+  const handleCloseModal = () => { setModalOpen(false); setEditingExpense(undefined) }
 
-  const monthLabel = format(new Date(year, month - 1), 'MMMM yyyy', { locale: ptBR })
-  const income = profile?.monthly_income ?? 0
+  const monthLabel   = format(new Date(year, month - 1), 'MMMM yyyy', { locale: ptBR })
+  const income       = profile?.monthly_income ?? 0
   const recentExpenses = expenses.slice(0, 5)
+  const creditTotal  = expenses
+    .filter(e => e.payment_method === 'Crédito')
+    .reduce((sum, e) => sum + Number(e.amount), 0)
 
   return (
     <>
@@ -58,22 +47,14 @@ export function DashboardPage() {
         {/* Month navigator */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white capitalize">
-              {monthLabel}
-            </h1>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white capitalize">{monthLabel}</h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">Visão geral do mês</p>
           </div>
           <div className="flex items-center gap-1">
-            <button
-              onClick={prevMonth}
-              className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            >
+            <button onClick={prevMonth} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <button
-              onClick={nextMonth}
-              className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            >
+            <button onClick={nextMonth} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
@@ -84,9 +65,14 @@ export function DashboardPage() {
           totalSpent={totalSpent}
           income={income}
           expenseCount={expenses.length}
+          creditTotal={creditTotal}
+          totalFixed={totalFixed}
         />
 
-        {/* Progress bar */}
+        {/* Fixed expenses banner */}
+        <FixedExpensesBanner totalFixed={totalFixed} />
+
+        {/* Budget progress */}
         {income > 0 && (
           <div className="bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-100 dark:border-gray-800">
             <div className="flex items-center justify-between mb-3">
@@ -117,10 +103,7 @@ export function DashboardPage() {
           <div className="lg:col-span-3 bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-100 dark:border-gray-800">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Gastos recentes</h2>
-              <Button
-                size="sm"
-                onClick={() => { setEditingExpense(undefined); setModalOpen(true) }}
-              >
+              <Button size="sm" onClick={() => { setEditingExpense(undefined); setModalOpen(true) }}>
                 <Plus className="w-3.5 h-3.5" />
                 Novo
               </Button>
@@ -147,10 +130,14 @@ export function DashboardPage() {
             )}
           </div>
 
-          {/* Category breakdown */}
+          {/* Pie chart */}
           <div className="lg:col-span-2 bg-white dark:bg-gray-900 rounded-2xl p-5 border border-gray-100 dark:border-gray-800">
             <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Por categoria</h2>
-            <CategoryBreakdown expenses={expenses} totalSpent={totalSpent} />
+            <SpendingPieChart
+              expenses={expenses}
+              categoryLimits={categoryLimits}
+              totalSpent={totalSpent}
+            />
           </div>
         </div>
       </div>

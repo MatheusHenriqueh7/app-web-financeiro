@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { Moon, Sun, LayoutDashboard, ListChecks, Settings, LogOut, Wallet } from 'lucide-react'
+import { Moon, Sun, LayoutDashboard, ListChecks, Tags, Settings, LogOut, Wallet } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { useProfile } from '../../hooks/useProfile'
@@ -41,9 +41,10 @@ export function Header() {
       {/* Mobile nav */}
       <nav className="flex md:hidden border-t border-gray-100 dark:border-gray-800">
         {[
-          { to: '/',         icon: LayoutDashboard, label: 'Dashboard' },
-          { to: '/expenses', icon: ListChecks,      label: 'Gastos'    },
-          { to: '/settings', icon: Settings,        label: 'Ajustes'   },
+          { to: '/',           icon: LayoutDashboard, label: 'Dashboard'  },
+          { to: '/expenses',   icon: ListChecks,      label: 'Gastos'     },
+          { to: '/categories', icon: Tags,            label: 'Categorias' },
+          { to: '/settings',   icon: Settings,        label: 'Ajustes'    },
         ].map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}

@@ -1,18 +1,19 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, ListChecks, Settings, LogOut, Wallet } from 'lucide-react'
+import { LayoutDashboard, ListChecks, Tags, Settings, LogOut, Wallet } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 
 const navItems = [
-  { to: '/',         label: 'Dashboard',  icon: LayoutDashboard },
-  { to: '/expenses', label: 'Gastos',     icon: ListChecks },
-  { to: '/settings', label: 'Ajustes',    icon: Settings },
+  { to: '/',           label: 'Dashboard',   icon: LayoutDashboard },
+  { to: '/expenses',   label: 'Gastos',      icon: ListChecks },
+  { to: '/categories', label: 'Categorias',  icon: Tags },
+  { to: '/settings',   label: 'Ajustes',     icon: Settings },
 ]
 
 export function Sidebar() {
   const { signOut } = useAuth()
 
   return (
-    <aside className="hidden md:flex flex-col w-60 min-h-screen bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800">
+    <aside className="hidden md:flex flex-col w-60 min-h-screen bg-white dark:bg-[#111E38] border-r border-gray-100 dark:border-gray-800">
       <div className="flex items-center gap-2.5 px-5 py-5 border-b border-gray-100 dark:border-gray-800">
         <div className="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center">
           <Wallet className="w-4 h-4 text-white" />
@@ -34,7 +35,7 @@ export function Sidebar() {
               }`
             }
           >
-            <Icon className="w-4.5 h-4.5 w-[18px] h-[18px]" />
+            <Icon className="w-[18px] h-[18px]" />
             {label}
           </NavLink>
         ))}

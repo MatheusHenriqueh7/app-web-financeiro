@@ -5,6 +5,7 @@ import { AppLayout } from './components/layout/AppLayout'
 import { AuthPage } from './pages/AuthPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { ExpensesPage } from './pages/ExpensesPage'
+import { CategoriesPage } from './pages/CategoriesPage'
 import { SettingsPage } from './pages/SettingsPage'
 
 function ProtectedRoutes() {
@@ -26,9 +27,10 @@ function ProtectedRoutes() {
   return (
     <Routes>
       <Route element={<AppLayout />}>
-        <Route path="/"         element={<DashboardPage />} />
-        <Route path="/expenses" element={<ExpensesPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/"            element={<DashboardPage />} />
+        <Route path="/expenses"    element={<ExpensesPage />} />
+        <Route path="/categories"  element={<CategoriesPage />} />
+        <Route path="/settings"    element={<SettingsPage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

@@ -1,6 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
+/* Class-based dark mode — triggered by .dark on <html> */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: 'Inter', system-ui, sans-serif;
 
@@ -31,4 +34,19 @@
   #root {
     min-height: 100svh;
   }
+}
+
+/* Dark mode — navy blue palette */
+.dark {
+  --color-gray-950: #0F1729;
+  --color-gray-900: #1A2744;
+  --color-gray-800: #2A3F6B;
+  --color-gray-700: #334d80;
+  --color-gray-600: #4a6299;
+  --color-gray-500: #6b85b0;
+  --color-gray-400: #8fa5c5;
+  --color-gray-300: #aabfd8;
+  --color-gray-200: #c5d8ec;
+  --color-gray-100: #1d2d52;
+  --color-gray-50:  #162038;
 }

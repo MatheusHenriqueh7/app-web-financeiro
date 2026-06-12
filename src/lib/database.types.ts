@@ -62,6 +62,75 @@ export interface Database {
         }
         Relationships: []
       }
+      category_limits: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          icon: string
+          color: string
+          monthly_limit: number
+          is_custom: boolean
+          sort_order: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          icon?: string
+          color?: string
+          monthly_limit?: number
+          is_custom?: boolean
+          sort_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          name?: string
+          icon?: string
+          color?: string
+          monthly_limit?: number
+          is_custom?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      recurring_expenses: {
+        Row: {
+          id: string
+          user_id: string
+          description: string
+          amount: number
+          category: string
+          payment_method: string
+          active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          description: string
+          amount: number
+          category: string
+          payment_method: string
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          description?: string
+          amount?: number
+          category?: string
+          payment_method?: string
+          active?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
