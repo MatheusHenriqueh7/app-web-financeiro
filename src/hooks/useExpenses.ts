@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { addMonths, parseISO, format } from 'date-fns'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
@@ -9,9 +9,58 @@ export function useExpenses(year: number, month: number) {
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const autoPostedRef = useRef<Set<string>>(new Set())
 
   const startDate = `${year}-${String(month).padStart(2, '0')}-01`
   const endDate = new Date(year, month, 0).toISOString().split('T')[0]
+
+  const autoPostRecurring = useCallback(async () => {
+    if (!user) return
+    const now = new Date()
+    if (year !== now.getFullYear() || month !== now.getMonth() + 1) return
+
+    const sessionKey = `${user.id}-${year}-${month}`
+    if (autoPostedRef.current.has(sessionKey)) return
+
+    const { data: recurring } = await supabase
+      .from('recurring_expenses')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('active', true)
+
+    if (!recurring?.length) { autoPostedRef.current.add(sessionKey); return }
+
+    const { data: existing } = await supabase
+      .from('expenses')
+      .select('recurring_expense_id')
+      .eq('user_id', user.id)
+      .gte('date', startDate)
+      .lte('date', endDate)
+      .not('recurring_expense_id', 'is', null)
+
+    const postedIds = new Set((existing ?? []).map(e => e.recurring_expense_id))
+
+    const toInsert = recurring
+      .filter(r => !postedIds.has(r.id))
+      .map(r => ({
+        user_id:              user.id,
+        description:          r.description,
+        amount:               r.amount,
+        category:             r.category,
+        payment_method:       r.payment_method,
+        date:                 startDate,
+        notes:                null,
+        installment_index:    1,
+        installment_count:    1,
+        recurring_expense_id: r.id,
+      }))
+
+    if (toInsert.length > 0) {
+      await supabase.from('expenses').insert(toInsert)
+    }
+
+    autoPostedRef.current.add(sessionKey)
+  }, [user, year, month, startDate, endDate])
 
   const fetchExpenses = useCallback(async () => {
     if (!user) { setLoading(false); return }
@@ -31,7 +80,10 @@ export function useExpenses(year: number, month: number) {
     setLoading(false)
   }, [user, startDate, endDate])
 
-  useEffect(() => { fetchExpenses() }, [fetchExpenses])
+  useEffect(() => {
+    if (!user) { setLoading(false); return }
+    autoPostRecurring().then(() => fetchExpenses())
+  }, [user, autoPostRecurring, fetchExpenses])
 
   const addExpense = async (formData: ExpenseFormData) => {
     if (!user) return { error: 'Not authenticated' }

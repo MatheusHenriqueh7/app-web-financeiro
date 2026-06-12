@@ -39,6 +39,7 @@ export interface Database {
           installment_group_id: string | null
           installment_index: number
           installment_count: number
+          recurring_expense_id: string | null
           created_at: string
           updated_at: string
         }
@@ -54,6 +55,7 @@ export interface Database {
           installment_group_id?: string | null
           installment_index?: number
           installment_count?: number
+          recurring_expense_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -67,6 +69,7 @@ export interface Database {
           installment_group_id?: string | null
           installment_index?: number
           installment_count?: number
+          recurring_expense_id?: string | null
           updated_at?: string
         }
         Relationships: []

@@ -94,6 +94,7 @@ export function ExpenseList({ expenses, onEdit, onDelete, onDeleteGroup, compact
         const color = CATEGORY_COLORS[expense.category as Category] ?? '#6b7280'
         const icon  = CATEGORY_ICONS[expense.category as Category]  ?? '📦'
         const isInstallment = expense.installment_count > 1
+        const isRecurring   = !!expense.recurring_expense_id
         return (
           <li key={expense.id} className="flex items-center gap-3 py-3 group">
             <div
@@ -109,6 +110,11 @@ export function ExpenseList({ expenses, onEdit, onDelete, onDeleteGroup, compact
                 {isInstallment && (
                   <span className="ml-1.5 text-[11px] font-semibold text-indigo-500 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-1.5 py-0.5 rounded-md align-middle">
                     {expense.installment_index}/{expense.installment_count}
+                  </span>
+                )}
+                {isRecurring && (
+                  <span className="ml-1.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-1.5 py-0.5 rounded-md align-middle">
+                    Fixo
                   </span>
                 )}
               </p>
