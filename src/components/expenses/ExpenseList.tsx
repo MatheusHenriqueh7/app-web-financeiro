@@ -101,6 +101,26 @@ export function ExpenseList({ expenses, onEdit, onDelete, onDeleteGroup, compact
         const icon  = CATEGORY_ICONS[expense.category as Category]  ?? '📦'
         const isInstallment = expense.installment_count > 1
         const isRecurring   = !!expense.recurring_expense_id
+        const hasTags = isInstallment || isRecurring || showTypeTag
+        const tags = (
+          <>
+            {isInstallment && (
+              <span className="text-[11px] font-semibold text-indigo-500 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-1.5 py-0.5 rounded-md align-middle">
+                {expense.installment_index}/{expense.installment_count}
+              </span>
+            )}
+            {isRecurring && (
+              <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-1.5 py-0.5 rounded-md align-middle">
+                Fixo
+              </span>
+            )}
+            {showTypeTag && !isInstallment && !isRecurring && (
+              <span className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-md align-middle">
+                Normal
+              </span>
+            )}
+          </>
+        )
         return (
           <li key={expense.id} className="flex items-center gap-3 py-3 group">
             <div
@@ -111,23 +131,9 @@ export function ExpenseList({ expenses, onEdit, onDelete, onDeleteGroup, compact
             </div>
 
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+              <p className={`font-semibold text-gray-900 dark:text-white truncate ${compact ? 'text-sm' : 'text-base'}`}>
                 {expense.description}
-                {isInstallment && (
-                  <span className="ml-1.5 text-[11px] font-semibold text-indigo-500 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-1.5 py-0.5 rounded-md align-middle">
-                    {expense.installment_index}/{expense.installment_count}
-                  </span>
-                )}
-                {isRecurring && (
-                  <span className="ml-1.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-1.5 py-0.5 rounded-md align-middle">
-                    Fixo
-                  </span>
-                )}
-                {showTypeTag && !isInstallment && !isRecurring && (
-                  <span className="ml-1.5 text-[10px] font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-md align-middle">
-                    Normal
-                  </span>
-                )}
+                {compact && hasTags && <span className="ml-1.5 inline-flex gap-1">{tags}</span>}
               </p>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span className="text-xs text-gray-400 dark:text-gray-500">
@@ -144,10 +150,13 @@ export function ExpenseList({ expenses, onEdit, onDelete, onDeleteGroup, compact
                   </>
                 )}
               </div>
+              {!compact && hasTags && (
+                <div className="flex items-center gap-1 mt-1">{tags}</div>
+              )}
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 tabular-nums">
+              <span className={`font-bold text-gray-900 dark:text-white tabular-nums ${compact ? 'text-sm' : 'text-base'}`}>
                 {Number(expense.amount).toLocaleString('pt-BR', {
                   style: 'currency',
                   currency: 'BRL',
