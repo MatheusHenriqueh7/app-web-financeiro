@@ -5,6 +5,7 @@ import { AppLayout } from './components/layout/AppLayout'
 import { AuthPage } from './pages/AuthPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { ExpensesPage } from './pages/ExpensesPage'
+import { HistoryPage } from './pages/HistoryPage'
 import { CategoriesPage } from './pages/CategoriesPage'
 import { SettingsPage } from './pages/SettingsPage'
 
@@ -29,6 +30,7 @@ function ProtectedRoutes() {
       <Route element={<AppLayout />}>
         <Route path="/"            element={<DashboardPage />} />
         <Route path="/expenses"    element={<ExpensesPage />} />
+        <Route path="/history"     element={<HistoryPage />} />
         <Route path="/categories"  element={<CategoriesPage />} />
         <Route path="/settings"    element={<SettingsPage />} />
       </Route>

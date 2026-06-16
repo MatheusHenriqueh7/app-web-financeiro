@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { Moon, Sun, LayoutDashboard, ListChecks, Tags, Settings, LogOut, Wallet } from 'lucide-react'
+import { Moon, Sun, LayoutDashboard, ListChecks, History, Tags, Settings, LogOut, Wallet } from 'lucide-react'
 import { useTheme } from '../../contexts/ThemeContext'
 import { useAuth } from '../../contexts/AuthContext'
 import { useProfile } from '../../hooks/useProfile'
@@ -43,6 +43,7 @@ export function Header() {
         {[
           { to: '/',           icon: LayoutDashboard, label: 'Dashboard'  },
           { to: '/expenses',   icon: ListChecks,      label: 'Gastos'     },
+          { to: '/history',    icon: History,         label: 'Histórico'  },
           { to: '/categories', icon: Tags,            label: 'Categorias' },
           { to: '/settings',   icon: Settings,        label: 'Ajustes'    },
         ].map(({ to, icon: Icon, label }) => (

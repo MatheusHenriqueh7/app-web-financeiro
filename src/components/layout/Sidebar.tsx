@@ -1,10 +1,11 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, ListChecks, Tags, Settings, LogOut, Wallet } from 'lucide-react'
+import { LayoutDashboard, ListChecks, History, Tags, Settings, LogOut, Wallet } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 
 const navItems = [
   { to: '/',           label: 'Dashboard',   icon: LayoutDashboard },
   { to: '/expenses',   label: 'Gastos',      icon: ListChecks },
+  { to: '/history',    label: 'Histórico',   icon: History },
   { to: '/categories', label: 'Categorias',  icon: Tags },
   { to: '/settings',   label: 'Ajustes',     icon: Settings },
 ]

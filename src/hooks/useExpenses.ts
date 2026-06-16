@@ -167,16 +167,22 @@ export function useExpenses(year: number, month: number) {
     return { error: null }
   }
 
-  const deleteExpense = async (id: string, deleteGroup = false) => {
-    if (deleteGroup) {
+  const deleteExpense = async (id: string, scope: 'single' | 'all' | 'future' = 'single') => {
+    if (scope !== 'single') {
       const expense = expenses.find(e => e.id === id)
       if (expense?.installment_group_id) {
-        const { error } = await supabase
+        const baseQuery = supabase
           .from('expenses')
           .delete()
           .eq('installment_group_id', expense.installment_group_id)
+        const { error } = scope === 'future'
+          ? await baseQuery.gte('installment_index', expense.installment_index)
+          : await baseQuery
         if (error) return { error: error.message }
-        setExpenses(prev => prev.filter(e => e.installment_group_id !== expense.installment_group_id))
+        setExpenses(prev => prev.filter(e => {
+          if (e.installment_group_id !== expense.installment_group_id) return true
+          return scope === 'future' && e.installment_index < expense.installment_index
+        }))
         return { error: null }
       }
     }

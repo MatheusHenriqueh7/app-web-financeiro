@@ -53,7 +53,7 @@ export function ExpensesPage() {
     const expense = expenses.find(e => e.id === id)
     if (!expense) return
     if (window.confirm(`Excluir todas as ${expense.installment_count} parcelas de "${expense.description}"?`)) {
-      await deleteExpense(id, true)
+      await deleteExpense(id, 'all')
     }
   }
   const handleCloseModal = () => {

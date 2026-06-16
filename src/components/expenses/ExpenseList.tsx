@@ -11,6 +11,8 @@ interface Props {
   onDelete: (id: string) => void
   onDeleteGroup?: (id: string) => void
   compact?: boolean
+  showTypeTag?: boolean
+  futureMode?: boolean
 }
 
 function PaymentBadge({ method }: { method: string }) {
@@ -30,14 +32,17 @@ function ActionMenu({
   onEdit,
   onDelete,
   onDeleteGroup,
+  futureMode,
 }: {
   expense: Expense
   onEdit: () => void
   onDelete: () => void
   onDeleteGroup?: () => void
+  futureMode?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const isInstallment = expense.installment_count > 1
+  const remaining = expense.installment_count - expense.installment_index + 1
   return (
     <div className="relative">
       <button
@@ -49,7 +54,7 @@ function ActionMenu({
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-8 z-20 w-44 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 py-1 overflow-hidden">
+          <div className="absolute right-0 top-8 z-20 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 py-1 overflow-hidden">
             <button
               onClick={() => { onEdit(); setOpen(false) }}
               className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -61,14 +66,15 @@ function ActionMenu({
               className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              {isInstallment ? `Excluir parcela ${expense.installment_index}/${expense.installment_count}` : 'Excluir'}
+              {isInstallment ? `Excluir só esta parcela (${expense.installment_index}/${expense.installment_count})` : 'Excluir'}
             </button>
             {isInstallment && onDeleteGroup && (
               <button
                 onClick={() => { onDeleteGroup(); setOpen(false) }}
                 className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
               >
-                <Trash2 className="w-3.5 h-3.5" /> Excluir todas ({expense.installment_count})
+                <Trash2 className="w-3.5 h-3.5" />
+                {futureMode ? `Excluir esta e as futuras (${remaining})` : `Excluir todas (${expense.installment_count})`}
               </button>
             )}
           </div>
@@ -78,7 +84,7 @@ function ActionMenu({
   )
 }
 
-export function ExpenseList({ expenses, onEdit, onDelete, onDeleteGroup, compact = false }: Props) {
+export function ExpenseList({ expenses, onEdit, onDelete, onDeleteGroup, compact = false, showTypeTag = false, futureMode = false }: Props) {
   if (expenses.length === 0) {
     return (
       <div className="text-center py-12 text-gray-400 dark:text-gray-600">
@@ -117,6 +123,11 @@ export function ExpenseList({ expenses, onEdit, onDelete, onDeleteGroup, compact
                     Fixo
                   </span>
                 )}
+                {showTypeTag && !isInstallment && !isRecurring && (
+                  <span className="ml-1.5 text-[10px] font-semibold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-md align-middle">
+                    Normal
+                  </span>
+                )}
               </p>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <span className="text-xs text-gray-400 dark:text-gray-500">
@@ -148,6 +159,7 @@ export function ExpenseList({ expenses, onEdit, onDelete, onDeleteGroup, compact
                   onEdit={() => onEdit(expense)}
                   onDelete={() => onDelete(expense.id)}
                   onDeleteGroup={onDeleteGroup ? () => onDeleteGroup(expense.id) : undefined}
+                  futureMode={futureMode}
                 />
               )}
             </div>
