@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { addMonths, parseISO, format } from 'date-fns'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
+import { getBillingMonth, getPurchaseDateRangeForBillingMonth, isSameYearMonth } from '../utils/billingMonth'
 import type { Expense, ExpenseFormData } from '../types'
 
 export function useExpenses(year: number, month: number) {
@@ -11,8 +12,15 @@ export function useExpenses(year: number, month: number) {
   const [error, setError] = useState<string | null>(null)
   const autoPostedRef = useRef<Set<string>>(new Set())
 
+  // Janela exata do mês corrente: usada para o auto-lançamento de gastos fixos
+  // (dedupe por mês civil, independe da fatura).
   const startDate = `${year}-${String(month).padStart(2, '0')}-01`
   const endDate = new Date(year, month, 0).toISOString().split('T')[0]
+
+  // Janela ampliada de busca: inclui compras de até 2 meses atrás, pois um
+  // gasto no crédito pode ter sido feito em um mês anterior e cair na fatura
+  // (mês de cobrança) deste mês.
+  const { startDate: fetchStartDate, endDate: fetchEndDate } = getPurchaseDateRangeForBillingMonth(year, month)
 
   const autoPostRecurring = useCallback(async () => {
     if (!user) return
@@ -70,15 +78,20 @@ export function useExpenses(year: number, month: number) {
       .from('expenses')
       .select('*')
       .eq('user_id', user.id)
-      .gte('date', startDate)
-      .lte('date', endDate)
+      .gte('date', fetchStartDate)
+      .lte('date', fetchEndDate)
       .order('date', { ascending: false })
       .order('created_at', { ascending: false })
 
     if (error) setError(error.message)
-    else setExpenses((data ?? []) as Expense[])
+    else {
+      const billed = ((data ?? []) as Expense[]).filter(e =>
+        isSameYearMonth(getBillingMonth(e.date, e.payment_method), year, month)
+      )
+      setExpenses(billed)
+    }
     setLoading(false)
-  }, [user, startDate, endDate])
+  }, [user, fetchStartDate, fetchEndDate, year, month])
 
   useEffect(() => {
     if (!user) { setLoading(false); return }
@@ -109,7 +122,10 @@ export function useExpenses(year: number, month: number) {
         .select()
         .single()
       if (error) return { error: error.message }
-      setExpenses(prev => [inserted as Expense, ...prev])
+      const insertedExpense = inserted as Expense
+      if (isSameYearMonth(getBillingMonth(insertedExpense.date, insertedExpense.payment_method), year, month)) {
+        setExpenses(prev => [insertedExpense, ...prev])
+      }
       return { error: null }
     }
 
@@ -134,10 +150,9 @@ export function useExpenses(year: number, month: number) {
       .select()
     if (error) return { error: error.message }
 
-    const currentMonthRows = ((inserted ?? []) as Expense[]).filter(e => {
-      const d = parseISO(e.date)
-      return d.getFullYear() === year && d.getMonth() + 1 === month
-    })
+    const currentMonthRows = ((inserted ?? []) as Expense[]).filter(e =>
+      isSameYearMonth(getBillingMonth(e.date, e.payment_method), year, month)
+    )
     setExpenses(prev =>
       [...currentMonthRows, ...prev].sort((a, b) =>
         b.date.localeCompare(a.date) || b.created_at.localeCompare(a.created_at)
@@ -162,7 +177,13 @@ export function useExpenses(year: number, month: number) {
       .eq('id', id)
     if (error) return { error: error.message }
     setExpenses(prev =>
-      prev.map(e => e.id === id ? { ...e, ...formData } : e)
+      prev.flatMap(e => {
+        if (e.id !== id) return [e]
+        const updated = { ...e, ...formData }
+        return isSameYearMonth(getBillingMonth(updated.date, updated.payment_method), year, month)
+          ? [updated]
+          : []
+      })
     )
     return { error: null }
   }
