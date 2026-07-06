@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { addMonths, parseISO, format } from 'date-fns'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
-import { getBillingMonth, getPurchaseDateRangeForBillingMonth, isSameYearMonth } from '../utils/billingMonth'
-import type { Expense, ExpenseFormData } from '../types'
+import { getBillingMonth, getPurchaseDateRangeForBillingMonth, getRecurringPostDate, isSameYearMonth } from '../utils/billingMonth'
+import type { Expense, ExpenseFormData, PaymentMethod } from '../types'
 
 export function useExpenses(year: number, month: number) {
   const { user } = useAuth()
@@ -12,11 +12,6 @@ export function useExpenses(year: number, month: number) {
   const [error, setError] = useState<string | null>(null)
   const autoPostedRef = useRef<Set<string>>(new Set())
 
-  // Janela exata do mês corrente: usada para o auto-lançamento de gastos fixos
-  // (dedupe por mês civil, independe da fatura).
-  const startDate = `${year}-${String(month).padStart(2, '0')}-01`
-  const endDate = new Date(year, month, 0).toISOString().split('T')[0]
-
   // Janela ampliada de busca: inclui compras de até 2 meses atrás, pois um
   // gasto no crédito pode ter sido feito em um mês anterior e cair na fatura
   // (mês de cobrança) deste mês.
@@ -24,8 +19,12 @@ export function useExpenses(year: number, month: number) {
 
   const autoPostRecurring = useCallback(async () => {
     if (!user) return
+
+    // Gastos fixos nunca são lançados retroativamente: só para o mês atual em diante.
     const now = new Date()
-    if (year !== now.getFullYear() || month !== now.getMonth() + 1) return
+    const viewedTotal = year * 12 + (month - 1)
+    const nowTotal = now.getFullYear() * 12 + now.getMonth()
+    if (viewedTotal < nowTotal) return
 
     const sessionKey = `${user.id}-${year}-${month}`
     if (autoPostedRef.current.has(sessionKey)) return
@@ -38,15 +37,21 @@ export function useExpenses(year: number, month: number) {
 
     if (!recurring?.length) { autoPostedRef.current.add(sessionKey); return }
 
+    // Janela ampliada: gastos fixos no crédito são lançados no mês anterior
+    // (dia 1) para que a fatura caia no mês visualizado.
     const { data: existing } = await supabase
       .from('expenses')
-      .select('recurring_expense_id')
+      .select('recurring_expense_id, date, payment_method')
       .eq('user_id', user.id)
-      .gte('date', startDate)
-      .lte('date', endDate)
+      .gte('date', fetchStartDate)
+      .lte('date', fetchEndDate)
       .not('recurring_expense_id', 'is', null)
 
-    const postedIds = new Set((existing ?? []).map(e => e.recurring_expense_id))
+    const postedIds = new Set(
+      (existing ?? [])
+        .filter(e => isSameYearMonth(getBillingMonth(e.date, e.payment_method as PaymentMethod), year, month))
+        .map(e => e.recurring_expense_id)
+    )
 
     const toInsert = recurring
       .filter(r => !postedIds.has(r.id))
@@ -56,7 +61,7 @@ export function useExpenses(year: number, month: number) {
         amount:               r.amount,
         category:             r.category,
         payment_method:       r.payment_method,
-        date:                 startDate,
+        date:                 getRecurringPostDate(year, month, r.payment_method as PaymentMethod),
         notes:                null,
         installment_index:    1,
         installment_count:    1,
@@ -68,7 +73,7 @@ export function useExpenses(year: number, month: number) {
     }
 
     autoPostedRef.current.add(sessionKey)
-  }, [user, year, month, startDate, endDate])
+  }, [user, year, month, fetchStartDate, fetchEndDate])
 
   const fetchExpenses = useCallback(async () => {
     if (!user) { setLoading(false); return }

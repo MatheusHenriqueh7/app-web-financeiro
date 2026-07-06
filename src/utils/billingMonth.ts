@@ -42,3 +42,17 @@ export function getPurchaseDateRangeForBillingMonth(year: number, month: number)
 export function isSameYearMonth(a: YearMonth, year: number, month: number): boolean {
   return a.year === year && a.month === month
 }
+
+/**
+ * Data de compra (dia 1) a ser usada ao lançar automaticamente um gasto fixo
+ * recorrente para que sua fatura caia no mês (year, month) informado. Débito
+ * e PIX são lançados no próprio mês; crédito é lançado um mês antes, já que
+ * a compra no dia 1 sempre cai na fatura do mês seguinte.
+ */
+export function getRecurringPostDate(year: number, month: number, paymentMethod: PaymentMethod): string {
+  if (paymentMethod !== 'Crédito') {
+    return `${year}-${String(month).padStart(2, '0')}-01`
+  }
+  const prev = shiftMonths(year, month, -1)
+  return `${prev.year}-${String(prev.month).padStart(2, '0')}-01`
+}
